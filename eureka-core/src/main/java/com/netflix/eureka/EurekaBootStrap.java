@@ -123,10 +123,13 @@ public class EurekaBootStrap implements ServletContextListener {
 
     /**
      * Users can override to initialize the environment themselves.
+     * 优先级从高到低
+     * config.properties配置文件archaius.configurationSource.additionalUrls配置项引入的配置文件，
+     * System.getProperties()
+     * System.getEnvs()配置
      */
     protected void initEurekaEnvironment() throws Exception {
         logger.info("Setting the eureka configuration..");
-
         String dataCenter = ConfigurationManager.getConfigInstance().getString(EUREKA_DATACENTER);
         if (dataCenter == null) {
             logger.info("Eureka data center value eureka.datacenter is not set, defaulting to default");
@@ -145,6 +148,7 @@ public class EurekaBootStrap implements ServletContextListener {
      * init hook for server context. Override for custom logic.
      */
     protected void initEurekaServerContext() throws Exception {
+        //读取eureka-server.properties配置；如果存在eureka-server-{env}.properties会覆盖eureka-server.properties配置项
         EurekaServerConfig eurekaServerConfig = new DefaultEurekaServerConfig();
 
         // For backward compatibility
@@ -158,19 +162,23 @@ public class EurekaBootStrap implements ServletContextListener {
         ApplicationInfoManager applicationInfoManager = null;
 
         if (eurekaClient == null) {
+            //实例注册到eureka server所需要的信息，重要的两个参数leaseRenewalIntervalInSeconds（实例向eureka server刷新租约时间）
+            // 和leaseExpirationDurationInSeconds 未收到续租请求多少时间之后示例被判为不生效
             EurekaInstanceConfig instanceConfig = isCloud(ConfigurationManager.getDeploymentContext())
                     ? new CloudInstanceConfig()
                     : new MyDataCenterInstanceConfig();
-            
+            //封装了向eureka server集群注册需要的信息
             applicationInfoManager = new ApplicationInfoManager(
                     instanceConfig, new EurekaConfigBasedInstanceInfoProvider(instanceConfig).get());
-            
+            //eureka-client.properties配置内容
             EurekaClientConfig eurekaClientConfig = new DefaultEurekaClientConfig();
+            //server节点间相互通讯client
             eurekaClient = new DiscoveryClient(applicationInfoManager, eurekaClientConfig);
         } else {
             applicationInfoManager = eurekaClient.getApplicationInfoManager();
         }
 
+        //应用实例信息注册表
         PeerAwareInstanceRegistry registry;
         if (isAws(applicationInfoManager.getInfo())) {
             registry = new AwsInstanceRegistry(
@@ -190,6 +198,7 @@ public class EurekaBootStrap implements ServletContextListener {
             );
         }
 
+        //Eureka server集群节点集合
         PeerEurekaNodes peerEurekaNodes = getPeerEurekaNodes(
                 registry,
                 eurekaServerConfig,
@@ -198,6 +207,7 @@ public class EurekaBootStrap implements ServletContextListener {
                 applicationInfoManager
         );
 
+        //Eureka server 上下文
         serverContext = new DefaultEurekaServerContext(
                 eurekaServerConfig,
                 serverCodecs,
@@ -206,8 +216,9 @@ public class EurekaBootStrap implements ServletContextListener {
                 applicationInfoManager
         );
 
+       //初始化eEurekaServerContextHolder
         EurekaServerContextHolder.initialize(serverContext);
-
+        //初始化eureka server上下文
         serverContext.initialize();
         logger.info("Initialized server context");
 

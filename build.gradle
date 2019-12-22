@@ -1,5 +1,6 @@
+
 buildscript {
-    repositories { jcenter() }
+    repositories { mavenCentral() }
 
     dependencies {
         classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:2.2.+'
@@ -7,7 +8,7 @@ buildscript {
 }
 
 plugins {
-    id 'nebula.netflixoss' version '3.6.0'
+    id 'nebula.netflixoss' version '5.1.1'
 }
 
 idea {
@@ -41,7 +42,7 @@ allprojects {
         woodstoxVersion = '5.2.1'
 
         // test deps
-        jetty_version = '7.2.0.v20101020'
+        jetty_version = '9.4.21.v20190926'
         junit_version = '4.11'
         mockitoVersion = '1.10.19'
         mockserverVersion = '3.9.2'
@@ -71,5 +72,10 @@ subprojects {
         manifest {
             attributes('Build-Time-ISO-8601': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"))
         }
+    }
+}
+allprojects{
+    repositories{
+        mavenCentral()
     }
 }
