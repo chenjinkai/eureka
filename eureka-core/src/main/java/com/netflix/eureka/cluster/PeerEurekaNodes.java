@@ -124,6 +124,7 @@ public class PeerEurekaNodes {
 
     /**
      * Resolve peer URLs.
+     * 获取与其他节点通信的urls，剔除自身节点
      *
      * @return peer URLs with node's own URL filtered out
      */
